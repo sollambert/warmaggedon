@@ -1,4 +1,4 @@
 # Godot 4+ specific ignores
 .godot/
-backend/target
-backend/Cargo.lock
+target
+Cargo.lock
