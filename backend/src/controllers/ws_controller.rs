@@ -46,7 +46,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>, connect_info: Co
                 return;
             }
             println!("{:?}", handshake);
-            username = text;
+            username = handshake.username.to_string();
         }
     }
 
