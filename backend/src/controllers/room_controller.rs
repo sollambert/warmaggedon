@@ -80,8 +80,7 @@ async fn create_room(
         println!("{}: {:?}", key, value);
     }
     
-    std::mem::drop(rooms);
-
+    drop(rooms);
     return format!("Room created: {:?}", id);
 }
 
@@ -105,14 +104,29 @@ async fn join_room_handle_socket(
         connect_info: ConnectInfo<SocketAddr>,
         room_id: String
     ) {
+
+    println!("processing new connection");
+
+    let mut rooms = state.rooms.lock().await;
+    for (key, value) in rooms.iter() {
+        println!("{}: {:?}", key, value);
+    }
+    let room = rooms.get(&room_id).unwrap();
     let (mut sender, mut receiver) = socket.split();
     let mut username = String::new();
+
+    let mut rx = room.tx.subscribe();
+    let tx = room.tx.clone();
+
     if let Some(Ok(init_msg)) = receiver.next().await {
         if let Message::Text(text) = init_msg {
             let handshake: ChatHandshake = serde_json::from_str(text.as_str()).unwrap_or_default();
-            if handshake == ChatHandshake::default() {
+            if handshake == ChatHandshake::default()
+            || handshake.password != room.password {
                 println!("{:?}", handshake);
                 println!("Failed handshake from: {:?}", connect_info.clone().0);
+                sender.close().await.unwrap();
+                drop(rooms);
                 return;
             }
             println!("{:?}", handshake);
@@ -120,12 +134,7 @@ async fn join_room_handle_socket(
         }
     }
 
-    let rooms = state.rooms.lock().await;
-    let room = rooms.get(&room_id).unwrap();
-    
-    let mut rx = room.tx.subscribe();
-
-    let join_msg = format!("{username} joined.");
+    let join_msg = format!("{username} joined {}.", room.id);
     println!("{}", join_msg);
     let _ = room.tx.send(join_msg);
 
@@ -140,7 +149,6 @@ async fn join_room_handle_socket(
         }
     });
 
-    let tx = room.tx.clone();
     let name = username.clone();
 
     let mut recv_task = tokio::spawn(async move {
@@ -161,7 +169,6 @@ async fn join_room_handle_socket(
     println!("{}", exit_msg);
     let _ = room.tx.send(exit_msg);
 
-    let mut rooms = state.rooms.lock().await;
     for room in rooms.clone().into_values() {
         if room.creator == username {
             rooms.remove(&room.id);
@@ -173,5 +180,5 @@ async fn join_room_handle_socket(
             rooms.insert(new_room.id.clone(), new_room.to_owned());
         }
     }
-    std::mem::drop(rooms);
+    drop(rooms);
 }
