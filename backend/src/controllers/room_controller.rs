@@ -15,7 +15,7 @@ use serde::Deserialize;
 use tokio::sync::broadcast;
 use futures::{sink::SinkExt, stream::StreamExt};
 
-use crate::types::chat::ChatHandshake;
+use crate::types::chat::{ChatHandshake, ChatMessage};
 use crate::types::state::{Room, RoomState};
 
 // route function to nest endpoints in router
@@ -124,14 +124,17 @@ async fn join_room_handle_socket(
         }
     });
 
-    let name = username.clone();
+    let current_user = username.clone();
 
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
-            if text == String::new() {
+            let message: ChatMessage = serde_json::from_str(&text).unwrap_or_default();
+            if text == String::new()
+            || message == ChatMessage::default()
+            || message.username != current_user {
                 continue;
             }
-            let _ = tx.send(format!("{name}: {text}"));
+            let _ = tx.send(format!("{}: {}", message.username, message.message));
         }
     });
 
