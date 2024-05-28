@@ -104,13 +104,7 @@ async fn join_room_handle_socket(
         connect_info: ConnectInfo<SocketAddr>,
         room_id: String
     ) {
-
-    println!("processing new connection");
-
-    let mut rooms = state.rooms.lock().await;
-    for (key, value) in rooms.iter() {
-        println!("{}: {:?}", key, value);
-    }
+    let rooms = state.rooms.lock().await;
     let room = rooms.get(&room_id).unwrap();
     let (mut sender, mut receiver) = socket.split();
     let mut username = String::new();
@@ -121,15 +115,13 @@ async fn join_room_handle_socket(
     if let Some(Ok(init_msg)) = receiver.next().await {
         if let Message::Text(text) = init_msg {
             let handshake: ChatHandshake = serde_json::from_str(text.as_str()).unwrap_or_default();
+            println!("{:?}, room_id: {}", handshake, room.id);
             if handshake == ChatHandshake::default()
             || handshake.password != room.password {
-                println!("{:?}", handshake);
                 println!("Failed handshake from: {:?}", connect_info.clone().0);
                 sender.close().await.unwrap();
-                drop(rooms);
                 return;
             }
-            println!("{:?}", handshake);
             username = handshake.username.to_string();
         }
     }
@@ -137,6 +129,7 @@ async fn join_room_handle_socket(
     let join_msg = format!("{username} joined {}.", room.id);
     println!("{}", join_msg);
     let _ = room.tx.send(join_msg);
+    drop(rooms);
 
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
@@ -165,6 +158,8 @@ async fn join_room_handle_socket(
         _ = (&mut recv_task) => send_task.abort(),
     };
 
+    let mut rooms = state.rooms.lock().await;
+    let room = rooms.get(&room_id).unwrap();
     let exit_msg = format!("{username} left.");
     println!("{}", exit_msg);
     let _ = room.tx.send(exit_msg);
