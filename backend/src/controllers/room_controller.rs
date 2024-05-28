@@ -1,7 +1,5 @@
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-// use std::sync::{Arc, Mutex};
 use axum::extract::{ConnectInfo, Path};
 use axum::Json;
 use axum::{
@@ -11,7 +9,6 @@ use axum::{
 use axum::{
     extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State}, response::IntoResponse
 };
-use futures::lock::Mutex;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::Deserialize;
@@ -19,29 +16,14 @@ use tokio::sync::broadcast;
 use futures::{sink::SinkExt, stream::StreamExt};
 
 use crate::types::chat::ChatHandshake;
-
-struct RoomState {
-    rooms: Mutex<HashMap<String, Room>>
-}
-
-#[derive(Debug, Clone)]
-struct Room {
-    pub id: String,
-    pub creator: String,
-    pub password: String,
-    pub users: Vec<String>,
-    tx: broadcast::Sender<String>
-}
+use crate::types::state::{Room, RoomState};
 
 // route function to nest endpoints in router
-pub fn routes() -> Router {
-    let rooms = Mutex::new(HashMap::<String, Room>::new());
-    let app_state = Arc::new(RoomState{rooms});
+pub fn routes() -> Router<Arc<RoomState>> {
     // create routes
     Router::new()
         .route("/create", post(create_room))
         .route("/join/:room_id", get(join_room_handler))
-        .with_state(app_state)
 }
 
 fn gen_room_id() -> String {
