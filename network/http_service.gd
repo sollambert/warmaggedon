@@ -1,11 +1,14 @@
 extends Node
 
 var socket = WebSocketPeer.new();
-@export var ws_base_url = "ws://127.0.0.1:3001";
+var http_client = HTTPClient.new();
+@export var api_host = "127.0.0.1";
 var first_connected = false;
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	http_client.connect_to_host(api_host, 3001)
+	create_room();
 	pass # Replace with function body.
 
 
@@ -29,10 +32,11 @@ func _process(delta):
 		set_process(false);
 	pass
 	
-func join_room(id):
-	socket.connect_to_url(ws_base_url + "/room/join/" + id)
+func create_room():
+	var message = ChatHandshake.new("Testing",0,"Dicks").json();
+	http_client.request(HTTPClient.METHOD_POST, "http://" + api_host + "/room/create", [], message)
 
-func send_message(msg):
+func send_greeting(msg):
 	print(msg);
 	socket.send_text(msg);
 	pass

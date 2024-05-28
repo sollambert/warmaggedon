@@ -8,7 +8,7 @@ mod types;
 #[tokio::main]
 async fn main() -> () {
     let app = Router::new()
-        .nest("/ws", controllers::ws_controller::routes());
+        .nest("/room", controllers::room_controller::routes());
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     println!("Server listening on http://{}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

@@ -13,7 +13,6 @@ func json():
 	var json = JSON.new();
 	var data = {
 		"username": username,
-		"room_id": room_id,
 		"message": message
 	}
 	return json.stringify(data);

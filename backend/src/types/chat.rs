@@ -1,15 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq)]
-pub struct ChatHandshake<'ch> {
-    pub username: &'ch str,
-    pub room_id: i64,
-    pub password: &'ch str
+pub struct ChatHandshake {
+    pub username: String,
+    pub password: String
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq)]
-pub struct ChatMessage<'ch> {
-    pub username: &'ch str,
-    pub room_id: i64,
-    pub message: &'ch str
+pub struct ChatMessage {
+    pub username: String,
+    pub message: String
 }
