@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://bmejoai2nq6x4"]
+
+[sub_resource type="GDScript" id="GDScript_8w3t7"]
+script/source = "extends LineEdit
+
+@export var width: int;
+
+func _ready():
+	self.size
+"
+
+[node name="TextInput" type="LineEdit"]
+offset_right = 67.0625
+offset_bottom = 31.0
+script = SubResource("GDScript_8w3t7")
