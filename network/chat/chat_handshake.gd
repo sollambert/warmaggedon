@@ -1,10 +1,9 @@
 class_name ChatHandshake;
 
 var username: String;
-var room_id: int;
 var password: String;
 
-func _init(username: String, room_id: int, password: String):
+func _init(username: String, password: String):
 	self.username = username;
 	self.password = password;
 
